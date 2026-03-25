@@ -28,13 +28,16 @@ jobs:
           terraform init
           terraform apply -auto-approve
 
-      - name: Upload to S3
+            - name: Upload to S3
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          # Fetch the bucket name, splitting at '::' to remove any debug text
-          BUCKET_NAME=$(cd terraform && terraform output -raw bucket_name 2>/dev/null | head -n1 | awk -F'::' '{print $1}')
+          # Extract clean bucket name by:
+          # 1. Discarding lines starting with '[command]'
+          # 2. Taking the first remaining line
+          # 3. Splitting at '::' to remove any appended debug text
+          BUCKET_NAME=$(cd terraform && terraform output -raw bucket_name 2>/dev/null | grep -v '^\[command\]' | head -n1 | awk -F'::' '{print $1}')
           
           if [[ ! "$BUCKET_NAME" =~ ^fmcg-consumption-dashboard- ]]; then
             echo "ERROR: Invalid bucket name retrieved: '$BUCKET_NAME'"
