@@ -44,3 +44,9 @@ output "website_url" {
   description = "The public URL of the FMCG Dashboard"
   value       = aws_s3_bucket_website_configuration.config.website_endpoint
 }
+
+# NEW: Directly output the exact bucket name so GitHub Actions doesn't have to parse URLs.
+output "bucket_name" {
+  description = "The exact name of the generated S3 bucket"
+  value       = aws_s3_bucket.dashboard_bucket.id
+}
