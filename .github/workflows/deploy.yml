@@ -10,7 +10,8 @@ jobs:
 
       - name: Set up Python
         uses: actions/setup-python@v4
-        with: { python-version: '3.9' }
+        with:
+          python-version: '3.9'
 
       - name: Generate Dashboard
         run: python generate_report.py
@@ -32,8 +33,15 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          # Fetch the exact bucket name directly from Terraform output
-          BUCKET_NAME=$(cd terraform && terraform output -raw bucket_name)
+          # Fetch the exact bucket name, discarding any stderr (like debug messages)
+          BUCKET_NAME=$(cd terraform && terraform output -raw bucket_name 2>/dev/null)
           
-          # Upload directly to that clean bucket name
-          aws s3 cp index.html s3://$BUCKET_NAME/index.html --region us-east-1
+          # Verify we got a non-empty bucket name
+          if [ -z "$BUCKET_NAME" ]; then
+            echo "ERROR: Could not retrieve bucket name from Terraform output."
+            exit 1
+          fi
+          
+          echo "Uploading to bucket: $BUCKET_NAME"
+          # Upload the generated HTML; quote the S3 URI to avoid argument splitting
+          aws s3 cp index.html "s3://$BUCKET_NAME/index.html" --region us-east-1
