@@ -33,15 +33,13 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          # Fetch the bucket name, filter out command and debug lines, then take the last line
-          BUCKET_NAME=$(cd terraform && terraform output -raw bucket_name 2>/dev/null | grep -vE '^(\[command\]|::debug::)' | tail -n1)
+          # Fetch the bucket name, splitting at '::' to remove any debug text
+          BUCKET_NAME=$(cd terraform && terraform output -raw bucket_name 2>/dev/null | head -n1 | awk -F'::' '{print $1}')
           
-          # Check if we got a valid bucket name (should start with 'fmcg-consumption-dashboard-')
           if [[ ! "$BUCKET_NAME" =~ ^fmcg-consumption-dashboard- ]]; then
             echo "ERROR: Invalid bucket name retrieved: '$BUCKET_NAME'"
             exit 1
           fi
           
           echo "Uploading to bucket: $BUCKET_NAME"
-          # Upload with public-read ACL to ensure the file is publicly accessible
           aws s3 cp index.html "s3://$BUCKET_NAME/index.html" --region us-east-1 --acl public-read
