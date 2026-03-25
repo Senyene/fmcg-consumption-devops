@@ -32,6 +32,8 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: |
-          # Use the terraform output to find the bucket name
-          BUCKET_NAME=$(cd terraform && terraform output -raw website_url | cut -d'.' -f1)
+          # Fetch the exact bucket name directly from Terraform output
+          BUCKET_NAME=$(cd terraform && terraform output -raw bucket_name)
+          
+          # Upload directly to that clean bucket name
           aws s3 cp index.html s3://$BUCKET_NAME/index.html --region us-east-1
